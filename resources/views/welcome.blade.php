@@ -273,5 +273,12 @@
         @if (Route::has('login'))
             <div class="h-14.5 hidden lg:block"></div>
         @endif
+
+        <div id="app">
+            <example-component></example-component>
+        </div>
+
+        @vite('resources/js/app.js')
+
     </body>
 </html>
