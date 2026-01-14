@@ -14,5 +14,3 @@ Route::prefix('auth')->group(function() {
     Route::post('/register', RegisterController::class);
     Route::post('/logout', LogoutController::class)->middleware('auth');
 });
-
-Route::apiResource('/tasks', TaskController::class);
