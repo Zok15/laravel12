@@ -7,9 +7,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Models\Task;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+
 
 Route::prefix('auth')->group(function() {
     Route::post('/login', LoginController::class);
