@@ -9,7 +9,6 @@ use App\Http\Resources\TaskResource;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
-use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
@@ -20,29 +19,13 @@ class TaskController extends Controller
     {
         Gate::authorize('viewAny', Task::class);
 
-        
-        $tasks =  request()->user()
+        // return TaskResource::collection(Task::all());
+        return request()->user()
             ->tasks()
-            ->get();
-            
-
-            return TaskResource::collection($tasks);
-    }
-
-    public function tasksTest()
-    {
-        $user = Auth::user();
-
-        if (!$user) {
-            return response()->json([
-                'message' => 'No authenticated user',
-            ], 401);
-        }
-
-        return response()->json([
-            'user' => $user->only('id', 'name', 'email'),
-            'can_viewAny' => Gate::check('viewAny', Task::class),
-        ]);
+            ->handleSort(request()->query('sort_by') ?? 'time')
+            ->with('priority')
+            ->get()
+            ->toResourceCollection();
     }
 
     /**
@@ -53,6 +36,7 @@ class TaskController extends Controller
         Gate::authorize('create', Task::class);
         
         $task = $request->user()->tasks()->create($request->validated());
+        $task->load('priority');
 
         return $task->toResource();
     }
@@ -64,6 +48,7 @@ class TaskController extends Controller
     {
         Gate::authorize('view', $task);
 
+        $task->load('priority');
         return $task->toResource();
     }
 
@@ -75,6 +60,7 @@ class TaskController extends Controller
         Gate::authorize('update', $task);
 
         $task->update($request->validated());
+        $task->load('priority');
 
         return $task->toResource();
     }
