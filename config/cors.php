@@ -19,7 +19,10 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173'],
+    'allowed_origins' => [
+        'https://laravelapptest.site',
+        'https://www.laravelapptest.site',
+    ],
 
     'allowed_origins_patterns' => [],
 
