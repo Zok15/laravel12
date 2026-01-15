@@ -9,69 +9,89 @@ use App\Http\Resources\TaskResource;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
+use Illuminate\Support\Arr;
+use App\Services\TaskInputParser;
 
-class TaskController extends Controller
-{
+class TaskController extends Controller {
+
+    public function __construct( protected TaskInputParser $parser ) {
+    }
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        Gate::authorize('viewAny', Task::class);
+    * Display a listing of the resource.
+    */
 
-        // return TaskResource::collection(Task::all());
+    public function index() {
+        Gate::authorize( 'viewAny', Task::class );
+
+        // return TaskResource::collection( Task::all() );
         return request()->user()
-            ->tasks()
-            ->handleSort(request()->query('sort_by') ?? 'time')
-            ->handleFilter(request()->query('due_date'))
-            ->with('priority')
-            ->get()
-            ->toResourceCollection();
+        ->tasks()
+        ->handleSort( request()->query( 'sort_by' ) ?? 'time' )
+        ->handleFilter( request()->query( 'due_date' ) )
+        ->with( 'priority' )
+        ->get()
+        ->toResourceCollection();
+    }
+
+    private function prepareData( array $data ): array {
+        $parsed = $this->parser->parse( $data[ 'name' ] );
+        if ( $parsed ) {
+            $data[ 'name' ] = $parsed[ 'name' ];
+            $data[ 'priority_id' ] = $data[ 'priority_id' ] ?? ( $parsed[ 'priority_id' ] ?? null );
+            $data[ 'due_date' ] = $data[ 'due_date' ] ?? ( $parsed[ 'due_date' ] ?? null );
+        }
+        return $data;
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreTaskRequest $request)
-    {
-        Gate::authorize('create', Task::class);
-        
-        $task = $request->user()->tasks()->create($request->validated());
-        $task->load('priority');
+    * Store a newly created resource in storage.
+    */
+
+    public function store( StoreTaskRequest $request ) {
+        Gate::authorize( 'create', Task::class );
+
+        $data = $request->validated();
+        $task = $request->user()->tasks()->create(
+            $this->prepareData( $data )
+        );
+
+        $task->load( 'priority' );
 
         return $task->toResource();
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Task $task)
-    {
-        Gate::authorize('view', $task);
+    * Display the specified resource.
+    */
 
-        $task->load('priority');
+    public function show( Task $task ) {
+        Gate::authorize( 'view', $task );
+
+        $task->load( 'priority' );
         return $task->toResource();
     }
 
     /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateTaskRequest $request, Task $task)
-    {
-        Gate::authorize('update', $task);
+    * Update the specified resource in storage.
+    */
 
-        $task->update($request->validated());
-        $task->load('priority');
+    public function update( UpdateTaskRequest $request, Task $task, TaskInputParser $parser ) {
+        Gate::authorize( 'update', $task );
+
+        $task->update(
+            $this->prepareData( $request->validated() )
+        );
+        $task->load( 'priority' );
 
         return $task->toResource();
     }
 
     /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Task $task)
-    {
-        Gate::authorize('delete', $task);
+    * Remove the specified resource from storage.
+    */
+
+    public function destroy( Task $task ) {
+        Gate::authorize( 'delete', $task );
 
         $task->delete();
 
